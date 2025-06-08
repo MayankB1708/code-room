@@ -50,7 +50,6 @@ http.route({
 
     if (eventType === "user.created") {
       const { id, email_addresses, first_name, last_name, image_url } = evt.data;
-
       const email = email_addresses[0].email_address;
       const name = `${first_name || ""} ${last_name || ""}`.trim();
 
@@ -66,6 +65,42 @@ http.route({
         return new Response("Error creating user", { status: 500 });
       }
     }
+
+    else if (eventType === "user.updated") {
+      const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+      const email = email_addresses[0].email_address;
+      const name = `${first_name || ""} ${last_name || ""}`.trim();
+
+      try {
+        await ctx.runMutation(api.users.updateUser, {
+          clerkId: id,
+          email,
+          image: image_url,
+        });
+      } catch (error) {
+        console.log("Error updating user:", error);
+        return new Response("Error updating user", { status: 500 });
+      }
+    }
+
+    else if (eventType === "user.deleted") {
+      const { id } = evt.data;
+
+      try {
+        if (!id) {
+          return new Response("Missing user ID", { status: 400 });
+        }
+
+        await ctx.runMutation(api.users.deleteUser, {
+          clerkId: id,
+        });
+
+      } catch (error) {
+        console.log("Error deleting user:", error);
+        return new Response("Error deleting user", { status: 500 });
+      }
+    }
+
 
     return new Response("Webhook processed successfully", { status: 200 });
   }),

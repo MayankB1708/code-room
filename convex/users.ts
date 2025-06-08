@@ -23,6 +23,43 @@ export const syncUser = mutation({
   },
 });
 
+export const updateUser = mutation({
+  args: {
+    email: v.string(),
+    clerkId: v.string(),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!existingUser) throw new Error("User not found");
+
+    return await ctx.db.patch(existingUser._id, {
+      email: args.email,
+      image: args.image,
+    });
+  },
+});
+
+export const deleteUser = mutation({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    return await ctx.db.delete(user._id);
+  },
+});
+
 export const getUsers = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
